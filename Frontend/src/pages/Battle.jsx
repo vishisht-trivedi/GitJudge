@@ -1,286 +1,170 @@
-import React, { useState, useRef, useEffect } from 'react';
-import dummyImage from '../assets/dummy.webp';
-import loadingGif from '../assets/mock.gif';
-import Typewriter from 'typewriter-effect';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { useState } from 'react'
+import { Swords, FlaskConical, ArrowLeft, Crown } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import CookRankBadge from '../components/CookRankBadge'
+import StatBar from '../components/StatBar'
+import { soundClick, soundSuccess, soundError } from '../utils/sounds'
 
-const Battle = () => {
-    const [username1, setUsername1] = useState('');
-    const [username2, setUsername2] = useState('');
-    const [profileImage1, setProfileImage1] = useState(dummyImage);
-    const [profileImage2, setProfileImage2] = useState(dummyImage);
-    const [isLoading1, setIsLoading1] = useState(false);
-    const [isLoading2, setIsLoading2] = useState(false);
-    const [battleResults, setBattleResults] = useState(null);
-    const [isBattling, setIsBattling] = useState(false);
-    const resultsRef = useRef(null); 
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
-    useEffect(() => {
-        if (battleResults && resultsRef.current) {
-            resultsRef.current.scrollIntoView({ 
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    }, [battleResults]);
+export default function Battle() {
+  const navigate = useNavigate()
+  const [u1, setU1] = useState('')
+  const [u2, setU2] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState('')
 
-    const fetchProfileImage = async (username, setProfileImage, setIsLoading) => {
-        if (!username) return;
+  const handleBattle = async (e) => {
+    e.preventDefault()
+    if (!u1.trim() || !u2.trim()) return
+    soundClick()
+    setLoading(true)
+    setError('')
+    setResult(null)
+    try {
+      const res = await fetch(`${API}/api/battle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username1: u1.trim(), username2: u2.trim() })
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setResult(data)
+      soundSuccess()
+    } catch (err) {
+      setError(err.message)
+      soundError()
+    } finally {
+      setLoading(false)
+    }
+  }
 
-        setIsLoading(true);
-        try {
-            const apiBaseUrl = import.meta.env.VITE_ROAST_BASE_URL || 'http://localhost:3000';
-            const response = await fetch(`${apiBaseUrl}/github/profile-image/${username}`);
+  if (loading) return (
+    <div className="loading-screen">
+      <div className="loading-molecule" />
+      <h2 className="loading-logo"><span style={{ color: 'var(--orange)' }}>COOK-OFF</span> ARENA</h2>
+      <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--green-bright)', fontSize: '0.85rem' }}>
+        <span style={{ color: 'var(--yellow)' }}>@{u1}</span> vs <span style={{ color: 'var(--orange)' }}>@{u2}</span>
+      </p>
+      <div className="loading-bar-track"><div className="loading-bar-fill" /></div>
+      <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--muted)', fontSize: '0.75rem' }}>Walter is judging the cook-off...</p>
+    </div>
+  )
 
-            if (response.ok) {
-                const data = await response.json();
-                setProfileImage(data.imageUrl);
-            } else {
-                setProfileImage(dummyImage);
-            }
-        } catch (error) {
-            //console.error("Error fetching profile image:", error);
-            setProfileImage(dummyImage);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const startBattle = async () => {
-        if (!username1.trim() || !username2.trim()) {
-            toast.error('Please enter both usernames');
-            return;
-        }
-
-        setIsBattling(true);
-        setBattleResults(null);
-
-        try {
-            const apiBaseUrl = import.meta.env.VITE_ROAST_BASE_URL || 'http://localhost:3000';
-            
-            const response = await fetch(`${apiBaseUrl}/api/battle`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username1,
-                    username2
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`Battle failed: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            setBattleResults(data);
-            
-            setProfileImage1(data.user1.avatarUrl);
-            setProfileImage2(data.user2.avatarUrl);
-            
-
-        } catch (error) {
-            //console.error("Error during battle:", error);
-            toast.error('Failed to generate battle results. Please try again.');
-        } finally {
-            setIsBattling(false);
-        }
-    };
-
-    const handleUsernameChange = (value, setUsername) => {
-        setUsername(value);
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        
-        if (!username1.trim() || !username2.trim()) {
-            toast.error("Please enter both usernames");
-            return;
-        }
-        
-        if (username1.trim().toLowerCase() === username2.trim().toLowerCase()) {
-            toast.warning("Are you comparing yourself with yourself? 🤔");
-            setUsername2(''); // Clear the second input
-            return;
-        }
-        
-        fetchProfileImage(username1, setProfileImage1, setIsLoading1);
-        fetchProfileImage(username2, setProfileImage2, setIsLoading2);
-        
-        startBattle();
-    };
-
+  if (result) {
+    const [d1, d2] = result.developers || []
+    const winner = result.verdict?.winner
     return (
-        <div className="container mx-auto px-4 py-6 sm:py-12">
-            <ToastContainer position="top-right" autoClose={5000} theme="dark" />
-            <div className="w-full max-w-2xl mx-auto">
-                <h1 className="text-3xl sm:text-4xl font-bold mb-6 sm:mb-8 text-center text-yellow-400">
-                    Battle of the Profiles
-                </h1>
-
-                <div className="flex justify-center items-center space-x-2 sm:space-x-8 mb-6 sm:mb-8">
-                    <div className="flex flex-col items-center">
-                        <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 mb-2 sm:mb-3 relative">
-                            <div className={`absolute inset-0 rounded-full border-4 ${username1 ? 'border-blue-500' : 'border-gray-700'} overflow-hidden transition-all duration-300 ${isLoading1 ? 'animate-pulse' : ''}`}>
-                                <img
-                                    src={profileImage1}
-                                    alt={username1 || "Player 1"}
-                                    className="w-full h-full object-cover"
-                                />
-                            </div>
-                        </div>
-                        {battleResults && (
-                            <span className="text-blue-400 font-medium text-xs sm:text-sm md:text-base lg:text-lg">{battleResults.user1.name}</span>
-                        )}
-                    </div>
-
-                    <div className="bg-yellow-500 text-black font-bold text-base sm:text-xl rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center flex-shrink-0">
-                        <span className="transform translate-y-px">VS</span>
-                    </div>
-
-                    <div className="flex flex-col items-center">
-                        <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 mb-2 sm:mb-3 relative">
-                            <div className={`absolute inset-0 rounded-full border-4 ${username2 ? 'border-purple-500' : 'border-gray-700'} overflow-hidden transition-all duration-300 ${isLoading2 ? 'animate-pulse' : ''}`}>
-                                <img
-                                    src={profileImage2}
-                                    alt={username2 || "Player 2"}
-                                    className="w-full h-full object-cover"
-                                />
-                            </div>
-                        </div>
-                        {battleResults && (
-                            <span className="text-purple-400 font-medium text-xs sm:text-sm md:text-base lg:text-lg">{battleResults.user2.name}</span>
-                        )}
-                    </div>
-                </div>
-
-                <div className="flex flex-row justify-between items-center space-x-2 sm:space-x-6 mb-6 sm:mb-8">
-                    <div className="flex-1">
-                        <div className="relative">
-                            <div className="absolute -top-2 left-2 sm:left-4 px-1 z-10 text-blue-400 text-xs sm:text-sm font-medium bg-gray-900">
-                                github
-                            </div>
-                            <div className="rounded-lg border-2 border-blue-400 shadow-lg transition-all duration-300 hover:shadow-blue-500/30">
-                                <div className="flex items-center px-2 sm:px-4 py-2 sm:py-3">
-                                    <input
-                                        type="text"
-                                        value={username1}
-                                        onChange={(e) => handleUsernameChange(e.target.value, setUsername1)}
-                                        placeholder="user1🦊"
-                                        className="w-full bg-transparent outline-none text-white placeholder-gray-400 focus:placeholder-blue-300 transition-colors text-xs sm:text-sm md:text-base"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                handleSubmit(e);
-                                            }
-                                        }}
-                                    />
-                                    {username1 && (
-                                        <button 
-                                            type="button" 
-                                            onClick={() => setUsername1('')}
-                                            className="ml-1 sm:ml-2 text-gray-400 hover:text-blue-400 transition-colors"
-                                        >
-                                            ✕
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex-1">
-                        <div className="relative">
-                            <div className="absolute -top-2 left-2 sm:left-4 px-1 z-10 text-purple-400 text-xs sm:text-sm font-medium bg-gray-900">
-                                github
-                            </div>
-                            <div className="rounded-lg border-2 border-purple-400 shadow-lg transition-all duration-300 hover:shadow-purple-500/30">
-                                <div className="flex items-center px-2 sm:px-4 py-2 sm:py-3">
-                                    <input
-                                        type="text"
-                                        value={username2}
-                                        onChange={(e) => handleUsernameChange(e.target.value, setUsername2)}
-                                        placeholder="user2🦊"
-                                        className="w-full bg-transparent outline-none text-white placeholder-gray-400 focus:placeholder-purple-300 transition-colors text-xs sm:text-sm md:text-base"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                handleSubmit(e);
-                                            }
-                                        }}
-                                    />
-                                    {username2 && (
-                                        <button 
-                                            type="button" 
-                                            onClick={() => setUsername2('')}
-                                            className="ml-1 sm:ml-2 text-gray-400 hover:text-purple-400 transition-colors"
-                                        >
-                                            ✕
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <form onSubmit={handleSubmit} className="flex justify-center">
-                    <button
-                        type="submit"
-                        disabled={isBattling}
-                        className={`bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2 sm:py-3 px-6 sm:px-8 rounded-lg transition duration-300 text-sm sm:text-base ${isBattling ? 'opacity-70 cursor-not-allowed' : ''}`}
-                    >
-                        {isBattling ? 'Battling...' : 'Battle🔥'}
-                    </button>
-                </form>
-
-                <div className="mt-8 sm:mt-12">
-                    {!battleResults && (
-                        <div className="flex justify-center">
-                            <div className="w-36 h-36 sm:w-48 sm:h-48 md:w-[200px] md:h-[200px] overflow-hidden rounded-lg">
-                                <img 
-                                    src={loadingGif} 
-                                    alt="GitHub Battle Preview" 
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                />
-                            </div>
-                        </div>
-                    )}
-                    
-                    {battleResults && (
-                        <div 
-                            ref={resultsRef}
-                            className="border-2 border-yellow-500/30 rounded-lg p-3 sm:p-4 bg-gray-900/50 shadow-xl animate-fadeIn max-w-3xl mx-auto"
-                        >
-                            <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-yellow-400 text-center">Battle Results</h2>
-                            <div className="prose prose-invert max-w-none prose-xs sm:prose-sm text-white">
-                                <Typewriter
-                                    options={{
-                                        cursor: '',
-                                        loop: false,
-                                        delay: 30,
-                                        autoStart: true,
-                                    }}
-                                    onInit={(typewriter) => {
-                                        // Process the text to remove asterisks
-                                        const processedText = battleResults.battleResults.replace(/\*(.*?)\*/g, '$1');
-                                        
-                                        typewriter.typeString(processedText)
-                                            .callFunction(() => {
-                                                //console.log('Battle results typing completed');
-                                            })
-                                            .start();
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
+      <div className="container page-enter" style={{ padding: '2rem 1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <button className="btn" onClick={() => { soundClick(); setResult(null) }} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <ArrowLeft size={14} /> New Battle
+          </button>
+          <div style={{ fontFamily: 'var(--font-title)', fontSize: '0.75rem', color: 'var(--muted)', letterSpacing: '0.15em' }}>
+            COOK-OFF RESULTS
+          </div>
         </div>
-    );
-};
 
-export default Battle;
+        {/* Winner banner */}
+        {winner && (
+          <div className="card animate-fadein" style={{ textAlign: 'center', marginBottom: '2rem', borderColor: 'rgba(245,197,24,0.3)', padding: '1.5rem' }}>
+            <Crown size={32} color="var(--yellow)" style={{ marginBottom: '0.5rem' }} />
+            <div style={{ fontFamily: 'var(--font-title)', fontSize: '0.7rem', color: 'var(--muted)', letterSpacing: '0.2em', marginBottom: '0.25rem' }}>WINNER</div>
+            <div style={{ fontFamily: 'var(--font-title)', fontSize: '2rem', color: 'var(--yellow)', fontWeight: 700 }}>@{winner}</div>
+            {result.verdict?.verdict && (
+              <p style={{ fontFamily: 'var(--font-worn)', color: 'var(--white)', fontSize: '0.95rem', lineHeight: 1.7, marginTop: '1rem', maxWidth: '600px', margin: '1rem auto 0' }}>
+                {result.verdict.verdict}
+              </p>
+            )}
+            {result.verdict?.quote && (
+              <div style={{ borderLeft: '3px solid var(--yellow)', paddingLeft: '1rem', marginTop: '1rem', display: 'inline-block', textAlign: 'left' }}>
+                <p style={{ fontFamily: 'var(--font-worn)', color: 'var(--yellow)', fontStyle: 'italic' }}>"{result.verdict.quote}"</p>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--muted)', marginTop: '0.2rem' }}>— Heisenberg</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Side by side */}
+        <div className="battle-grid">
+          {[d1, d2].map((dev, idx) => dev && (
+            <div key={dev.username} className={`card animate-fadein`} style={{ animationDelay: `${idx * 0.1}s`, borderColor: dev.username === winner ? 'rgba(245,197,24,0.4)' : 'rgba(98,168,84,0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                <img src={dev.githubData?.avatar_url} alt={dev.username} style={{ width: 48, height: 48, border: `2px solid ${dev.username === winner ? 'var(--yellow)' : 'rgba(98,168,84,0.3)'}` }} />
+                <div>
+                  <div style={{ fontFamily: 'var(--font-title)', fontSize: '1rem', color: 'var(--white)' }}>{dev.githubData?.name || dev.username}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--muted)' }}>@{dev.username}</div>
+                </div>
+                {dev.username === winner && <Crown size={18} color="var(--yellow)" style={{ marginLeft: 'auto' }} />}
+              </div>
+              <div style={{ marginBottom: '1.25rem' }}>
+                <CookRankBadge rank={dev.verdict?.cookRank} score={dev.verdict?.chemistryScore} />
+              </div>
+              {dev.verdict?.stats && Object.entries({
+                'Commit Purity': dev.verdict.stats.commitPurity,
+                'Language Mastery': dev.verdict.stats.languageMastery,
+                'Repo Quality': dev.verdict.stats.repoQuality,
+                'Community Rep': dev.verdict.stats.communityRep,
+                'Heisenberg Factor': dev.verdict.stats.heisenbergFactor,
+              }).map(([label, val], i) => (
+                <StatBar key={label} label={label} value={val} delay={i * 80} />
+              ))}
+              <button className="btn" onClick={() => { soundClick(); navigate(`/result/${dev.username}`) }}
+                style={{ marginTop: '1rem', width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <FlaskConical size={13} /> Full Profile
+              </button>
+            </div>
+          ))}
+          <div className="vs-divider">VS</div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="container" style={{ padding: '3rem 1.5rem' }}>
+      <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+          <Swords size={28} color="var(--orange)" />
+          <h1 style={{ fontFamily: 'var(--font-title)', fontSize: '2.5rem', color: 'var(--white)', letterSpacing: '0.08em' }}>
+            COOK-OFF <span style={{ color: 'var(--orange)' }}>ARENA</span>
+          </h1>
+        </div>
+        <p style={{ fontFamily: 'var(--font-worn)', color: 'var(--muted)', fontStyle: 'italic' }}>
+          Two developers enter. One product wins. No half measures.
+        </p>
+      </div>
+
+      {error && (
+        <div style={{ background: 'rgba(192,57,43,0.1)', border: '1px solid rgba(192,57,43,0.3)', color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', padding: '0.75rem 1rem', marginBottom: '1.5rem', maxWidth: '600px', margin: '0 auto 1.5rem' }}>
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleBattle} style={{ maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '1rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <div>
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--muted)', letterSpacing: '0.1em', display: 'block', marginBottom: '0.4rem' }}>PLAYER 1</label>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--muted)', padding: '0.6rem 0.5rem', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(98,168,84,0.3)', borderRight: 'none' }}>gh/</span>
+              <input className="search-input" value={u1} onChange={e => setU1(e.target.value)} placeholder="username" style={{ borderRadius: 0 }} />
+            </div>
+          </div>
+          <div style={{ fontFamily: 'var(--font-title)', fontSize: '1.5rem', color: 'var(--orange)', textAlign: 'center', textShadow: '0 0 20px rgba(230,126,34,0.5)' }}>VS</div>
+          <div>
+            <label style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--muted)', letterSpacing: '0.1em', display: 'block', marginBottom: '0.4rem' }}>PLAYER 2</label>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--muted)', padding: '0.6rem 0.5rem', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(98,168,84,0.3)', borderRight: 'none' }}>gh/</span>
+              <input className="search-input" value={u2} onChange={e => setU2(e.target.value)} placeholder="username" style={{ borderRadius: 0 }} />
+            </div>
+          </div>
+        </div>
+        <button type="submit" className="btn btn-yellow" disabled={!u1.trim() || !u2.trim()}
+          style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '8px', padding: '0.85rem' }}>
+          <Swords size={16} /> START THE COOK-OFF
+        </button>
+      </form>
+    </div>
+  )
+}

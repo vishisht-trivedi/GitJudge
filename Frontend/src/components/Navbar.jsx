@@ -1,266 +1,104 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
-import logo from '../assets/logo.png'; // Import the logo image
+import { Link, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { FlaskConical, Swords, Trophy, Volume2, VolumeX, Briefcase, FileText } from 'lucide-react'
+import { setSoundEnabled, soundClick } from '../utils/sounds'
 
-const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [githubDropdown, setGithubDropdown] = useState(false);
-  const [leetcodeDropdown, setLeetcodeDropdown] = useState(false);
-  const navRef = useRef(null);
+const QUOTES = [
+  'Walter: "Say my name."',
+  'Walter: "I am the one who knocks."',
+  'Mike: "No more half measures."',
+  'Saul: "Better call Saul!"',
+  'Gus: "I hide in plain sight, same as you."',
+  'Walter: "Chemistry is the study of change."',
+  'Jesse: "Yeah, science!"',
+  'Walter: "I did it for me. I liked it. I was good at it."',
+  'Walter: "Tread lightly."',
+  'Walter: "I am the danger."',
+]
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
+const NAV_LINKS = [
+  { to: '/',             Icon: FlaskConical, label: 'ANALYZE',      color: 'var(--green-bright)' },
+  { to: '/battle',       Icon: Swords,       label: 'BATTLE',       color: 'var(--orange)' },
+  { to: '/leaderboard',  Icon: Trophy,       label: 'LEADERBOARD',  color: 'var(--yellow)' },
+  { to: '/job-fit',      Icon: Briefcase,    label: 'JOB FIT',      color: 'var(--green-neon)' },
+  { to: '/resume-roast', Icon: FileText,     label: 'RESUME ROAST', color: 'var(--red)' },
+]
 
-  const toggleGithubDropdown = () => {
-    setGithubDropdown(!githubDropdown);
-    if (leetcodeDropdown) setLeetcodeDropdown(false);
-  };
+export default function Navbar() {
+  const loc = useLocation()
+  const [sound, setSound] = useState(true)
 
-  const toggleLeetcodeDropdown = () => {
-    setLeetcodeDropdown(!leetcodeDropdown);
-    if (githubDropdown) setGithubDropdown(false);
-  };
+  const isActive = (path) => loc.pathname === path
 
-  // Close dropdowns when clicking outside navbar
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (navRef.current && !navRef.current.contains(event.target)) {
-        setIsOpen(false);
-        setGithubDropdown(false);
-        setLeetcodeDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  const toggleSound = () => {
+    const next = !sound
+    setSound(next)
+    setSoundEnabled(next)
+  }
 
   return (
-    <div className="flex justify-center px-4 py-4">
-      <nav ref={navRef} className="bg-gray-800 shadow-lg rounded-lg w-full max-w-5xl">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <div className="flex items-center">
-                <div className="h-9 w-9 rounded-full bg-white flex items-center justify-center mr-2">
-                  <img src={logo} alt="PushClash Logo" className="h-9 w-9 rounded-full" />
-                </div>
-                <NavLink to="/" className="text-white text-xl font-bold">
-                  PushClash
-                </NavLink>
-              </div>
-            </div>
-            
-            <div className="hidden sm:flex sm:items-center">
-              <div className="flex space-x-4">
-                <NavLink 
-                  to="/" 
-                  className={({ isActive }) => 
-                    isActive ? "text-white px-3 py-2 rounded-md font-medium" : "text-gray-300 hover:text-white px-3 py-2 rounded-md font-medium"
-                  }
-                >
-                  Home
-                </NavLink>
-                <NavLink 
-                  to="/portfolio" 
-                  className={({ isActive }) => 
-                    isActive ? "text-white px-3 py-2 rounded-md font-medium" : "text-gray-300 hover:text-white px-3 py-2 rounded-md font-medium"
-                  }
-                >
-                  Portfolio
-                </NavLink>
-                
-                {/* Github Dropdown */}
-                <div className="relative group">
-                  <button 
-                    className="text-gray-300 hover:text-white px-3 py-2 rounded-md font-medium flex items-center"
-                    onClick={toggleGithubDropdown}
-                    onMouseEnter={() => setGithubDropdown(true)}
-                  >
-                    Github
-                    <svg className="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                  </button>
-                  <div 
-                    className={`absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-gray-700 ring-1 ring-black ring-opacity-5 ${githubDropdown ? 'block' : 'hidden'} group-hover:block z-10`}
-                    onMouseLeave={() => setGithubDropdown(false)}
-                  >
-                    <div className="py-1">
-                      <NavLink 
-                        to="/roast" 
-                        className={({ isActive }) => 
-                          isActive ? "text-white block px-4 py-2 text-sm font-medium" : "text-gray-300 hover:bg-gray-600 hover:text-white block px-4 py-2 text-sm font-medium"
-                        }
-                      >
-                        Github Roast
-                      </NavLink>
-                      <NavLink 
-                        to="/battle" 
-                        className={({ isActive }) => 
-                          isActive ? "text-white block px-4 py-2 text-sm font-medium" : "text-gray-300 hover:bg-gray-600 hover:text-white block px-4 py-2 text-sm font-medium"
-                        }
-                      >
-                        Github Battle
-                      </NavLink>
-                    </div>
-                  </div>
-                </div>
+    <>
+      <nav className="navbar">
+        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
 
-                {/* LeetCode Dropdown */}
-                <div className="relative group">
-                  <button 
-                    className="text-gray-300 hover:text-white px-3 py-2 rounded-md font-medium flex items-center"
-                    onClick={toggleLeetcodeDropdown}
-                    onMouseEnter={() => setLeetcodeDropdown(true)}
-                  >
-                    LeetCode
-                    <svg className="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                  </button>
-                  <div 
-                    className={`absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-gray-700 ring-1 ring-black ring-opacity-5 ${leetcodeDropdown ? 'block' : 'hidden'} group-hover:block z-10`}
-                    onMouseLeave={() => setLeetcodeDropdown(false)}
-                  >
-                    <div className="py-1">
-                      <NavLink 
-                        to="/leetcode" 
-                        className={({ isActive }) => 
-                          isActive ? "text-white block px-4 py-2 text-sm font-medium" : "text-gray-300 hover:bg-gray-600 hover:text-white block px-4 py-2 text-sm font-medium"
-                        }
-                      >
-                        LeetCode Roast
-                      </NavLink>
-                      <NavLink 
-                        to="/leetcode-battle" 
-                        className={({ isActive }) => 
-                          isActive ? "text-white block px-4 py-2 text-sm font-medium" : "text-gray-300 hover:bg-gray-600 hover:text-white block px-4 py-2 text-sm font-medium"
-                        }
-                      >
-                        LeetCode Battle
-                      </NavLink>
-                    </div>
-                  </div>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }} onClick={soundClick}>
+            <div style={{ display: 'flex', gap: '2px' }}>
+              {[['35','Br','Bromine'],['56','Ba','Barium'],['79','Au','Gold']].map(([num, sym, name]) => (
+                <div key={sym} className="element-box" style={{ minWidth: '40px', padding: '0.2rem 0.35rem' }}>
+                  <div className="atomic-num">{num}</div>
+                  <div className="symbol" style={{ fontSize: '0.9rem' }}>{sym}</div>
+                  <div className="name">{name}</div>
                 </div>
-              </div>
+              ))}
             </div>
-            
-            <div className="flex items-center sm:hidden">
-              <button
-                onClick={toggleMenu}
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none"
-                aria-expanded={isOpen}
-              >
-                <span className="sr-only">Open main menu</span>
-                {!isOpen ? (
-                  <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                ) : (
-                  <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                )}
-              </button>
+            <span style={{ fontFamily: 'var(--font-title)', fontSize: '1.25rem', fontWeight: 700, color: 'var(--green-neon)', letterSpacing: '0.12em' }}>
+              GIT<span style={{ color: 'var(--yellow)' }}>JUDGE</span>
+            </span>
+          </Link>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', gap: '1.25rem', fontFamily: 'var(--font-title)', fontSize: '0.8rem', letterSpacing: '0.08em' }}>
+              {NAV_LINKS.map(({ to, Icon, label, color }) => {
+                const active = isActive(to)
+                return (
+                  <Link
+                    key={to}
+                    to={to}
+                    onClick={soundClick}
+                    style={{
+                      color: active ? color : 'var(--white)',
+                      textDecoration: 'none',
+                      transition: 'color 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      borderBottom: active ? `2px solid ${color}` : '2px solid transparent',
+                      paddingBottom: '2px',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.color = color }}
+                    onMouseLeave={e => { e.currentTarget.style.color = active ? color : 'var(--white)' }}
+                  >
+                    <Icon size={13} style={{ color }} />
+                    {label}
+                  </Link>
+                )
+              })}
             </div>
+            <button className="sound-btn" onClick={toggleSound} title={sound ? 'Mute' : 'Unmute'}>
+              {sound ? <Volume2 size={14} /> : <VolumeX size={14} />}
+            </button>
           </div>
-        </div>
 
-        <div className={`${isOpen ? 'block' : 'hidden'} sm:hidden`}>
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            <NavLink 
-              to="/"
-              onClick={toggleMenu} 
-              className={({ isActive }) => 
-                isActive ? "text-white block px-3 py-2 rounded-md textbase font-medium" : "text-gray-300 hover:text-white block px-3 py-2 rounded-md textbase font-medium"
-              }
-            >
-              Home
-            </NavLink>
-            <NavLink 
-              to="/portfolio"
-              onClick={toggleMenu} 
-              className={({ isActive }) => 
-                isActive ? "text-white block px-3 py-2 rounded-md textbase font-medium" : "text-gray-300 hover:text-white block px-3 py-2 rounded-md textbase font-medium"
-              }
-            >
-              Portfolio
-            </NavLink>
-            
-            {/* Mobile Github Dropdown */}
-            <div>
-              <button 
-                onClick={toggleGithubDropdown}
-                className="text-gray-300 hover:text-white flex justify-between items-center w-full px-3 py-2 rounded-md textbase font-medium"
-              >
-                <span>Github</span>
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={githubDropdown ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}></path>
-                </svg>
-              </button>
-              <div className={`pl-4 ${githubDropdown ? 'block' : 'hidden'} space-y-1 pt-1`}>
-                <NavLink 
-                  to="/roast"
-                  onClick={toggleMenu} 
-                  className={({ isActive }) => 
-                    isActive ? "text-white block px-3 py-2 rounded-md textbase font-medium" : "text-gray-300 hover:text-white block px-3 py-2 rounded-md textbase font-medium"
-                  }
-                >
-                  Github Roast
-                </NavLink>
-                <NavLink 
-                  to="/battle"
-                  onClick={toggleMenu} 
-                  className={({ isActive }) => 
-                    isActive ? "text-white block px-3 py-2 rounded-md textbase font-medium" : "text-gray-300 hover:text-white block px-3 py-2 rounded-md textbase font-medium"
-                  }
-                >
-                  Github Battle
-                </NavLink>
-              </div>
-            </div>
-
-            {/* Mobile LeetCode Dropdown */}
-            <div>
-              <button 
-                onClick={toggleLeetcodeDropdown}
-                className="text-gray-300 hover:text-white flex justify-between items-center w-full px-3 py-2 rounded-md textbase font-medium"
-              >
-                <span>LeetCode</span>
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={leetcodeDropdown ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}></path>
-                </svg>
-              </button>
-              <div className={`pl-4 ${leetcodeDropdown ? 'block' : 'hidden'} space-y-1 pt-1`}>
-                <NavLink 
-                  to="/leetcode"
-                  onClick={toggleMenu} 
-                  className={({ isActive }) => 
-                    isActive ? "text-white block px-3 py-2 rounded-md textbase font-medium" : "text-gray-300 hover:text-white block px-3 py-2 rounded-md textbase font-medium"
-                  }
-                >
-                  LeetCode Roast
-                </NavLink>
-                <NavLink 
-                  to="/leetcode-battle"
-                  onClick={toggleMenu} 
-                  className={({ isActive }) => 
-                    isActive ? "text-white block px-3 py-2 rounded-md textbase font-medium" : "text-gray-300 hover:text-white block px-3 py-2 rounded-md textbase font-medium"
-                  }
-                >
-                  LeetCode Battle
-                </NavLink>
-              </div>
-            </div>
-          </div>
         </div>
       </nav>
-    </div>
-  );
-};
 
-export default Navbar;
+      <div className="bb-ticker">
+        <div className="bb-ticker-inner">
+          {[...QUOTES, ...QUOTES].map((q, i) => (
+            <span key={i}>{q} &nbsp;&nbsp;&middot;&nbsp;&nbsp;</span>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}

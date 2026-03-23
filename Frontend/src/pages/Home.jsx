@@ -1,329 +1,142 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import loadingGif from '../assets/mock.gif';
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { FlaskConical, Swords, Trophy, Briefcase, FileText } from 'lucide-react'
+import { soundClick, soundError } from '../utils/sounds'
 
-const Home = () => {
-  const [loading, setLoading] = useState(true);
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
-  useEffect(() => {
-    // Ping the server to wake it up on page load
-    const pingServer = async () => {
-      try {
-        await fetch(`${import.meta.env.VITE_ROAST_BASE_URL}/api/wake`, {
-          method: "GET",
-        });
-        //console.log("Server pinged on page load");
-      } catch (error) {
-        //console.error("Error pinging server:", error);
-      }
-    };
+const ELEMENTS = [
+  ['35','Br','Bromine'],['56','Ba','Barium'],['79','Au','Gold'],
+  ['80','Hg','Mercury'],['84','Po','Polonium'],['19','K','Potassium'],
+  ['47','Ag','Silver'],['6','C','Carbon'],
+]
 
-    // Call the ping function
-    pingServer();
-    
-    // Simulate loading time and handle page content loading
-    const handleLoad = () => {
-      // Add a small delay to ensure smooth transition
-      setTimeout(() => {
-        setLoading(false);
-      }, 1500);
-    };
+const FEATURES = [
+  { Icon: FlaskConical, color: 'var(--green-bright)', title: 'Chemistry Score', desc: '5-dimension scoring across commits, languages, quality, community, and the Heisenberg Factor.' },
+  { Icon: FlaskConical, color: 'var(--orange)',       title: 'AI Roast',        desc: 'Gemini judges your code habits as Walter White. Ruthless. Accurate. Darkly funny.' },
+  { Icon: Swords,       color: 'var(--red)',          title: 'Battle Mode',     desc: 'Head-to-head dev cook-off. Two usernames enter. One product wins. No half measures.' },
+  { Icon: Trophy,       color: 'var(--yellow)',       title: 'Leaderboard',     desc: 'Top chemistry scores across all judged developers. See who runs the empire.' },
+]
 
-    // Check if document is already loaded
-    if (document.readyState === 'complete') {
-      handleLoad();
-    } else {
-      window.addEventListener('load', handleLoad);
-      return () => window.removeEventListener('load', handleLoad);
-    }
-  }, []);
+const QUOTES = [
+  { char: 'WALTER WHITE',    text: 'You asked me if I was in the danger. I am the danger.' },
+  { char: 'HEISENBERG',      text: 'Say my name. You are goddamn right.' },
+  { char: 'MIKE EHRMANTRAUT',text: 'No more half measures, Walter.' },
+]
+
+const EXAMPLES = ['torvalds', 'gaearon', 'sindresorhus', 'tj', 'yyx990803']
+
+export default function Home() {
+  const [username, setUsername] = useState('')
+  const [recent, setRecent] = useState([])
+  const navigate = useNavigate()
 
   useEffect(() => {
-    const handleAnchorClick = (e) => {
-      const href = e.currentTarget.getAttribute('href');
-      if (href?.startsWith('#')) {
-        e.preventDefault();
-        const element = document.querySelector(href);
-        if (element) {
-          element.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-          });
-        }
-      }
-    };
+    fetch(`${API}/api/leaderboard?limit=5`)
+      .then(r => r.json())
+      .then(d => setRecent(d.profiles || []))
+      .catch(() => {})
+  }, [])
 
-    const anchorLinks = document.querySelectorAll('a[href^="#"]');
-    anchorLinks.forEach(anchor => {
-      anchor.addEventListener('click', handleAnchorClick);
-    });
-
-    return () => {
-      anchorLinks.forEach(anchor => {
-        anchor.removeEventListener('click', handleAnchorClick);
-      });
-    };
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="w-full max-w-md sm:max-w-lg md:max-w-xl">
-          <DotLottieReact
-            src="https://lottie.host/0c81d8de-b0e3-43c6-92f5-0b0471d7fc89/N8w2kwG37d.lottie"
-            autoplay
-            loop
-            className="w-full h-full"
-          />
-          <p className="text-white text-center mt-4 text-lg sm:text-xl md:text-2xl font-medium animate-pulse">
-            Loading PushClash...
-          </p>
-        </div>
-      </div>
-    );
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    const u = username.trim()
+    if (!u) return
+    soundClick()
+    navigate(`/result/${u}`)
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Hero Section */}
-      <section className="relative pt-8 pb-12 sm:pt-12 sm:pb-16 md:pt-24 md:pb-32">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
-          <div className="flex flex-col items-center text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4">
-              <span className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 text-transparent bg-clip-text">
-                PushClash
-              </span>
-            </h1>
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 mb-6 sm:mb-8 max-w-sm sm:max-w-lg md:max-w-xl lg:max-w-2xl">
-              The ultimate tool to analyze, compare, and playfully roast GitHub profiles, LeetCode profiles, and portfolios
-            </p>
-            <div className="flex flex-row flex-wrap justify-center gap-3 sm:gap-4">
-              <Link to="/roast" className="inline-flex items-center justify-center whitespace-nowrap bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-semibold py-2.5 sm:py-3 px-5 sm:px-6 rounded-md shadow-md hover:shadow-lg transition-all duration-300 text-sm sm:text-base">
-                <span>Roast a Profile</span>
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-1.5 sm:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </Link>
-              <a href="#features" className="inline-flex items-center justify-center whitespace-nowrap bg-transparent border-2 border-white hover:bg-white hover:text-gray-900 text-white font-semibold py-2.5 sm:py-3 px-5 sm:px-6 rounded-md shadow-md hover:shadow-lg transition-all duration-300 text-sm sm:text-base">
-                <span>Learn More</span>
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-1.5 sm:ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </a>
-            </div>
+    <div className="home-hero">
+      {/* Periodic table row */}
+      <div style={{ display: 'flex', gap: '3px', marginBottom: '1.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+        {ELEMENTS.map(([num, sym, name]) => (
+          <div key={sym} className="element-box" style={{ minWidth: '52px' }}>
+            <div className="atomic-num">{num}</div>
+            <div className="symbol">{sym}</div>
+            <div className="name">{name}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Title */}
+      <h1 className="home-title">
+        <span style={{ color: 'var(--white)' }}>GIT</span>
+        <span style={{ color: 'var(--yellow)' }}>JUDGE</span>
+      </h1>
+      <p className="home-subtitle">Say. My. Name.</p>
+      <p className="home-tagline">"I am the one who codes."</p>
+
+      {/* Search */}
+      <form onSubmit={handleSubmit} className="home-search-row">
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--muted)', padding: '0.75rem 0.75rem', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(98,168,84,0.3)', borderRight: 'none', whiteSpace: 'nowrap' }}>
+          github.com/
+        </span>
+        <input
+          className="search-input"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          placeholder="username"
+          style={{ borderRadius: 0, borderRight: 'none' }}
+          autoFocus
+        />
+        <button type="submit" className="btn" style={{ padding: '0.75rem 1.25rem', borderRadius: 0 }}>
+          JUDGE
+        </button>
+      </form>
+
+      {/* Example usernames */}
+      <div className="home-try-row">
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--muted)' }}>Try:</span>
+        {EXAMPLES.map(u => (
+          <button key={u} onClick={() => { soundClick(); navigate(`/result/${u}`) }}
+            style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--green-bright)', background: 'rgba(98,168,84,0.06)', border: '1px solid rgba(98,168,84,0.2)', padding: '0.2rem 0.6rem', cursor: 'pointer', transition: 'all 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--green-neon)'; e.currentTarget.style.color = 'var(--green-neon)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(98,168,84,0.2)'; e.currentTarget.style.color = 'var(--green-bright)' }}
+          >
+            {u}
+          </button>
+        ))}
+      </div>
+
+      {/* Features */}
+      <div className="home-features">
+        {FEATURES.map(({ Icon, color, title, desc }) => (
+          <div key={title} className="feature-card">
+            <Icon size={28} color={color} style={{ marginBottom: '0.75rem' }} />
+            <div style={{ fontFamily: 'var(--font-title)', fontSize: '0.95rem', color, letterSpacing: '0.08em', marginBottom: '0.5rem' }}>{title}</div>
+            <div style={{ fontFamily: 'var(--font-worn)', fontSize: '0.8rem', color: 'var(--muted)', lineHeight: 1.6 }}>{desc}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Recently judged */}
+      {recent.length > 0 && (
+        <div style={{ width: '100%', maxWidth: '900px', marginBottom: '2rem' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--muted)', letterSpacing: '0.15em', marginBottom: '0.75rem', textAlign: 'left' }}>
+            RECENTLY JUDGED
+          </div>
+          <div className="recently-judged">
+            {recent.map(p => (
+              <div key={p.username} className="judged-chip" onClick={() => { soundClick(); navigate(`/result/${p.username}`) }}>
+                <img src={p.githubData?.avatar_url} alt={p.username} style={{ width: 24, height: 24, borderRadius: '50%', border: '1px solid rgba(98,168,84,0.3)' }} />
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--white)' }}>@{p.username}</span>
+                <span style={{ fontFamily: 'var(--font-title)', fontSize: '0.75rem', color: 'var(--green-neon)', fontWeight: 700 }}>{p.verdict?.chemistryScore}</span>
+              </div>
+            ))}
           </div>
         </div>
+      )}
 
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-[-1]">
-          <div className="absolute w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-red-500 rounded-full opacity-20 blur-3xl -top-20 -left-20 animate-pulse"></div>
-          <div className="absolute w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-yellow-500 rounded-full opacity-20 blur-3xl top-40 right-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-green-500 rounded-full opacity-20 blur-3xl bottom-0 left-1/3 animate-pulse" style={{ animationDelay: '2s' }}></div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-10 sm:py-12 md:py-16 bg-gray-800/30">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-8 sm:mb-10 md:mb-12 text-center">
-            <span className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-transparent bg-clip-text">
-              Choose Your Roasting Adventure
-            </span>
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-            <div className="bg-gray-900 border border-red-500/30 rounded-xl p-4 sm:p-5 md:p-6 hover:shadow-lg hover:shadow-red-500/20 transition-all duration-300">
-              <div className="rounded-full bg-red-500/20 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center mb-4 sm:mb-5 md:mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05c-.867 0-1.607.356-1.99.89-.383.533-.607 1.23-.607 2.06 0 .822.224 1.52.608 2.053.082.115.224.275.393.445.238.24.533.48.87.705.904.575 2.098.967 3.476 1.097-.9.541-1.516 1.097-2.086 1.563A7.141 7.141 0 013 14.305c-.231.132-.454.240-.679.32A7 7 0 1017 8a1 1 0 00-1.316-.949c-.477.114-.89.293-1.332.497-.305.141-.608.293-.906.449-1.254.668-2.382 1.438-3.385 2.334-.202.18-.348.307-.438.39-.27.243-.377.58-.293.902.153.578.557 1.023 1.068 1.316 1.09.625 2.225.907 3.398.907.433 0 .865-.043 1.293-.114 1.732-.293 3.305-1.074 4.443-2.282.415-.44.695-.92.847-1.434.148-.507.15-1.065.008-1.645-.022-.095-.04-.19-.057-.28-.303.254-.643.53-1.012.815-.592.463-1.262.9-1.957 1.268L17 8a7 7 0 10-5.057-2.19c.166-.014.332-.02.5-.02"/>
-                </svg>
-              </div>
-              <h3 className="text-lg sm:text-xl md:text-xl font-bold mb-2 sm:mb-3 text-red-400">Roast a GitHub Profile</h3>
-              <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-5 md:mb-6">
-                Discover humorous insights about any GitHub profile. Our AI analyzes repositories, commit patterns, and coding habits to generate a personalized roast.
-              </p>
-              <Link to="/roast" className="text-red-400 font-medium hover:text-red-300 flex items-center text-sm sm:text-base">
-                Try Profile Roaster
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
-
-            <div className="bg-gray-900 border border-yellow-500/30 rounded-xl p-4 sm:p-5 md:p-6 hover:shadow-lg hover:shadow-yellow-500/20 transition-all duration-300">
-              <div className="rounded-full bg-yellow-500/20 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center mb-4 sm:mb-5 md:mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              </div>
-              <h3 className="text-lg sm:text-xl md:text-xl font-bold mb-2 sm:mb-3 text-yellow-400">Battle GitHub Profiles</h3>
-              <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-5 md:mb-6">
-                Put two GitHub users head-to-head in an epic coding showdown. Compare stats, contributions, and skills to determine the ultimate developer champion.
-              </p>
-              <Link to="/battle" className="text-yellow-400 font-medium hover:text-yellow-300 flex items-center text-sm sm:text-base">
-                Start a Battle
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
-
-            <div className="bg-gray-900 border border-green-500/30 rounded-xl p-4 sm:p-5 md:p-6 hover:shadow-lg hover:shadow-green-500/20 transition-all duration-300 sm:col-span-2 lg:col-span-1">
-              <div className="rounded-full bg-green-500/20 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center mb-4 sm:mb-5 md:mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 01-1.581.814l-4.903-4.447a1 1 0 00-1.032 0l-4.903 4.447A1 1 0 014 16V4z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <h3 className="text-lg sm:text-xl md:text-xl font-bold mb-2 sm:mb-3 text-green-400">Analyze Portfolio Website</h3>
-              <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-5 md:mb-6">
-                Get professional insights and fun feedback on your portfolio website. Our AI evaluates design, content, and user experience to help you improve.
-              </p>
-              <Link to="/portfolio" className="text-green-400 font-medium hover:text-green-300 flex items-center text-sm sm:text-base">
-                Analyze Your Portfolio
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
-
-            {/* Add a new card for LeetCode */}
-            <div className="bg-gray-900 border border-blue-500/30 rounded-xl p-4 sm:p-5 md:p-6 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300">
-              <div className="rounded-full bg-blue-500/20 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center mb-4 sm:mb-5 md:mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M16.5 9.39997L12.5 13.4L10.5 11.4L8.5 13.4L12.5 17.4L18.5 11.4L16.5 9.39997Z" />
-                  <path d="M19.14 3.50997C16.9 1.26997 13.07 1.26997 10.83 3.50997L3.6 10.74C2.4 11.94 2.16 13.77 3.03 15.18L2.32 15.89C1.54 16.67 1.54 17.94 2.32 18.72C3.1 19.5 4.37 19.5 5.15 18.72L5.86 18.01C7.27 18.88 9.1 18.64 10.3 17.44L17.54 10.21C19.78 7.97997 19.78 4.14997 17.54 1.90997L19.14 3.50997ZM14.42 7.09997L11.17 10.35C10.78 10.74 10.78 11.37 11.17 11.77C11.56 12.16 12.19 12.16 12.58 11.77L15.83 8.51997C16.23 8.12997 16.22 7.49997 15.83 7.09997C15.44 6.71997 14.81 6.70997 14.42 7.09997Z" />
-                </svg>
-              </div>
-              <h3 className="text-lg sm:text-xl md:text-xl font-bold mb-2 sm:mb-3 text-blue-400">LeetCode Profile Analysis</h3>
-              <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-5 md:mb-6">
-                How good are your coding skills? Get a humorous roast of your LeetCode profile based on problem-solving stats and skill levels.
-              </p>
-              <Link to="/leetcode" className="text-blue-400 font-medium hover:text-blue-300 flex items-center text-sm sm:text-base">
-                Check Your LeetCode Profile
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
-
-            {/* LeetCode Battle card */}
-            <div className="bg-gray-900 border border-cyan-500/30 rounded-xl p-4 sm:p-5 md:p-6 hover:shadow-lg hover:shadow-cyan-500/20 transition-all duration-300">
-              <div className="rounded-full bg-cyan-500/20 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center mb-4 sm:mb-5 md:mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-cyan-500" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19.0002 7H17.0002V5C17.0002 4.45 16.5502 4 16.0002 4H12.0002C11.4502 4 11.0002 4.45 11.0002 5V7H9.00016C7.90016 7 7.00016 7.9 7.00016 9V11C7.00016 11.55 7.45016 12 8.00016 12H12.0002C12.5502 12 13.0002 11.55 13.0002 11V9H15.0002V11C15.0002 11.55 15.4502 12 16.0002 12H20.0002C20.5502 12 21.0002 11.55 21.0002 11V9C21.0002 7.9 20.1002 7 19.0002 7Z" />
-                  <path d="M5 13H3C1.9 13 1 13.9 1 15V17C1 17.55 1.45 18 2 18H6C6.55 18 7 17.55 7 17V15H9V17C9 17.55 9.45 18 10 18H14C14.55 18 15 17.55 15 17V15C15 13.9 14.1 13 13 13H11V11H13C14.1 11 15 10.1 15 9V7C15 6.45 14.55 6 14 6H10C9.45 6 9 6.45 9 7V9H7V7C7 6.45 6.55 6 6 6H2C1.45 6 1 6.45 1 7V9C1 10.1 1.9 11 3 11H5V13Z" />
-                </svg>
-              </div>
-              <h3 className="text-lg sm:text-xl md:text-xl font-bold mb-2 sm:mb-3 text-cyan-400">LeetCode Battle</h3>
-              <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-5 md:mb-6">
-                Compare coding skills in a head-to-head LeetCode battle! See who has solved more problems and who has the better ranking.
-              </p>
-              <Link to="/leetcode-battle" className="text-cyan-400 font-medium hover:text-cyan-300 flex items-center text-sm sm:text-base">
-                Battle LeetCode Profiles
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
+      {/* BB Quotes */}
+      <div className="home-quotes">
+        {QUOTES.map(({ char, text }) => (
+          <div key={char} className="quote-block">
+            <div style={{ fontFamily: 'var(--font-title)', fontSize: '0.7rem', color: 'var(--muted)', letterSpacing: '0.12em', marginBottom: '0.4rem' }}>{char}</div>
+            <div style={{ fontFamily: 'var(--font-worn)', fontSize: '0.85rem', color: 'var(--white)', lineHeight: 1.6 }}>{text}</div>
           </div>
-        </div>
-      </section>
-
-      {/* How It Works Section - improved responsiveness */}
-      <section className="py-10 sm:py-12 md:py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-8 sm:mb-10 md:mb-12 text-center">
-            <span className="bg-gradient-to-r from-blue-400 to-purple-500 text-transparent bg-clip-text">
-              How It Works
-            </span>
-          </h2>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center">
-            <div className="order-2 lg:order-1">
-              <div className="flex flex-col space-y-6 sm:space-y-8">
-                <div className="flex items-start space-x-3 sm:space-x-4">
-                  <div className="bg-blue-500/20 rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-blue-400 font-bold text-sm sm:text-base">1</span>
-                  </div>
-                  <div>
-                    <h3 className="text-base sm:text-lg font-bold text-blue-400 mb-1 sm:mb-2">Enter GitHub Username or Portfolio URL</h3>
-                    <p className="text-sm sm:text-base text-gray-300">
-                      Simply input a GitHub username for roasting or portfolio analysis, or enter two usernames for an epic battle.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3 sm:space-x-4">
-                  <div className="bg-purple-500/20 rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-purple-400 font-bold text-sm sm:text-base">2</span>
-                  </div>
-                  <div>
-                    <h3 className="text-base sm:text-lg font-bold text-purple-400 mb-1 sm:mb-2">Our AI Analyzes Everything</h3>
-                    <p className="text-sm sm:text-base text-gray-300">
-                      Our advanced AI engine examines repositories, commit history, coding patterns, and portfolio design elements.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3 sm:space-x-4">
-                  <div className="bg-pink-500/20 rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-pink-400 font-bold text-sm sm:text-base">3</span>
-                  </div>
-                  <div>
-                    <h3 className="text-base sm:text-lg font-bold text-pink-400 mb-1 sm:mb-2">Get Your Results</h3>
-                    <p className="text-sm sm:text-base text-gray-300">
-                      Receive a detailed, entertaining analysis that provides both humor and valuable insights to help you improve.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="order-1 lg:order-2 flex justify-center">
-              <div className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 rounded-2xl overflow-hidden shadow-lg shadow-blue-500/20">
-                <img src={loadingGif} alt="Demo" className="w-full h-full object-cover" loading="lazy" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-10 sm:py-12 md:py-16 bg-gradient-to-r from-gray-800 to-gray-900">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-[90%] sm:max-w-[85%] md:max-w-[80%] text-center">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 md:mb-6">Ready to get started?</h2>
-          <p className="text-base sm:text-lg text-gray-300 mb-6 sm:mb-8 max-w-sm sm:max-w-lg md:max-w-2xl mx-auto">
-            Choose your adventure and discover insights about GitHub profiles and portfolios with a touch of humor.
-          </p>
-          <div className="flex flex-row flex-wrap justify-center items-center gap-3 sm:gap-4">
-            <Link to="/roast" className="inline-flex items-center justify-center whitespace-nowrap bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 text-sm sm:text-base w-auto">
-              <span>Roast a Profile</span>
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-1.5 sm:ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </Link>
-            <Link to="/battle" className="inline-flex items-center justify-center whitespace-nowrap bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 text-sm sm:text-base w-auto">
-              <span>Battle Profiles</span>
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-1.5 sm:ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </Link>
-            <Link to="/portfolio" className="inline-flex items-center justify-center whitespace-nowrap bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 text-sm sm:text-base w-auto">
-              <span>Analyze Portfolio</span>
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-1.5 sm:ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </Link>
-            <Link to="/leetcode-battle" className="inline-flex items-center justify-center whitespace-nowrap bg-gradient-to-r from-cyan-600 to-orange-600 hover:from-cyan-700 hover:to-orange-700 text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 text-sm sm:text-base w-auto">
-              <span>LeetCode Battle</span>
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-1.5 sm:ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </Link>
-          </div>
-        </div>
-      </section>
+        ))}
+      </div>
     </div>
-  );
-};
-
-export default Home;
+  )
+}

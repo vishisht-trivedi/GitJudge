@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Environment variables — NEVER commit these
+.env
+*/.env
+Backend/.env
+Frontend/.env
+
+# Build output
+Frontend/dist/
+Frontend/build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python scripts used during dev (optional to keep)
+Backend/write_*.py
+Backend/fix_*.py
+Backend/patch_*.py
+
+# PDF uploads (if ever saved to disk)
+uploads/
+*.pdf
