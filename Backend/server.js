@@ -37,11 +37,26 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => console.error('MongoDB error:', err.message));
 
 // ── CORS ─────────────────────────────────────────────────────────
-const allowedOrigins = process.env.FRONTEND_URL
-  ? [process.env.FRONTEND_URL, 'http://localhost:5173']
-  : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+// Allow production URL, localhost, and all Vercel preview deployments
+const corsOptions = {
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'https://git-judge-8ca1.vercel.app',
+      'http://localhost:5173',
+      'http://127.0.0.1:5173'
+    ];
+    
+    // Allow if no origin (mobile apps, curl, etc.) or in allowed list or Vercel preview
+    if (!origin || allowedOrigins.includes(origin) || origin.includes('vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+};
 
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 
 // ── Rate limiting ────────────────────────────────────────────────
