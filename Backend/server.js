@@ -5,12 +5,17 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 // ── Startup env check ────────────────────────────────────────────
-const REQUIRED_ENV = ['MONGODB_URI', 'GEMINI_API_KEY', 'GITHUB_TOKEN'];
+const REQUIRED_ENV = ['MONGODB_URI', 'GEMINI_API_KEY'];
 const missing = REQUIRED_ENV.filter(k => !process.env[k]);
 if (missing.length) {
   console.error('Missing required env vars:', missing.join(', '));
   console.error('Copy Backend/.env.example to Backend/.env and fill in values.');
   process.exit(1);
+}
+
+// GITHUB_TOKEN is optional but recommended (increases rate limits)
+if (!process.env.GITHUB_TOKEN) {
+  console.warn('⚠️  GITHUB_TOKEN not set. GitHub API rate limits will be lower (60 req/hr vs 5000 req/hr).');
 }
 
 const analyzeRoutes    = require('./routes/analyze');
@@ -22,6 +27,9 @@ const resumeRoastRoutes = require('./routes/resumeroast');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// ── Trust proxy (required for Render/Heroku/etc.) ────────────────
+app.set('trust proxy', 1);
 
 // ── MongoDB ──────────────────────────────────────────────────────
 mongoose.connect(process.env.MONGODB_URI)
